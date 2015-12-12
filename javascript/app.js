@@ -59,12 +59,72 @@ function bootstrapSpotifySearch(){
 /* COMPLETE THIS FUNCTION! */
 function displayAlbumsAndTracks(event) {
   var appendToMe = $('#albums-and-tracks');
+  var artistId = $(event.target).attr('data-spotify-id')
+  var albumsUrl = 'https://api.spotify.com/v1/artists/' + artistId + '/albums'
+  var spotifyQueryRequest;
+  spotifyQueryRequest = $.ajax({
+          type: "GET",
+          dataType: 'json',
+          url: albumsUrl
+      });
+  spotifyQueryRequest.done(function (data) {
+        var album = data;
+        // Clear the output area
+        appendToMe.html('');
+
+        album.items.forEach(function(album){
+          var albumLi = $("<li id = \"" + album.id +"\">" + "Album Name: " + album.name + "</li>")
+          albumLi.attr('data-spotify-id', album.id);
+          appendToMe.append(albumLi);
+          getAlbumYear(album.href, album);
+          getAlbumTracks(album.href, album);
+        })
+      });
 
   // These two lines can be deleted. They're mostly for show. 
   console.log("you clicked on:");
   console.log($(event.target).attr('data-spotify-id'));//.attr('data-spotify-id'));
+  console.log(albumsUrl)
 }
+function getAlbumYear(albumUrl, albumobj){
+  spotifyQueryRequest = $.ajax({
+    type: "GET",
+    dataType: 'json',
+    url: albumUrl
+  });
+  spotifyQueryRequest.done(function(album){
+    $("#" + albumobj.id).append(" | Release Date: " + album.release_date);
+  })
+}      
+function getAlbumTracks(albumUrl, albumobj){
+  var tracks = $("<div>");
+  spotifyQueryRequest = $.ajax({
+    type: "GET",
+    dataType: 'json',
+    url: albumUrl + "/tracks"
+  })
+  spotifyQueryRequest.done(function(data){
+    data.items.forEach(function(track){
+      var trackDom = $('<p>');
+      trackDom.attr("id", track.id);
+      $(trackDom).append("Track: " + track.name);
+      $(tracks).append(trackDom);
+      getPopularity(track.href, track);
+    })
+    $("#" + albumobj.id).append(tracks);
+  })
+}
+function getPopularity(trackUrl, trackObj){
+  spotifyQueryRequest = $.ajax({
+    type: "GET",
+    dataType: 'json',
+    url: trackUrl
+  })
 
+  spotifyQueryRequest.done(function(data){
+    $("#" + trackObj.id).append(" | Popularity: " + data.popularity + "<br>")
+  })
+}
 /* YOU MAY WANT TO CREATE HELPER FUNCTIONS OF YOUR OWN */
 /* THEN CALL THEM OR REFERENCE THEM FROM displayAlbumsAndTracks */
 /* THATS PERFECTLY FINE, CREATE AS MANY AS YOU'D LIKE */
